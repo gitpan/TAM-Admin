@@ -983,6 +983,18 @@ ivadmin_context_delete(ctx,rsp)
 	RETVAL
 	
 unsigned long
+ivadmin_context_setdelcred(ctx,pacValue,pacLength,rsp)
+	ivadmin_context ctx
+	unsigned char * pacValue
+	unsigned long pacLength
+	ivadmin_response rsp = NO_INIT
+   CODE:
+	RETVAL = ivadmin_context_setdelcred(ctx,pacValue,pacLength,&rsp);
+   OUTPUT:
+	rsp
+	RETVAL
+
+unsigned long
 ivadmin_user_get(ctx,userid,user,rsp)
 	ivadmin_context ctx
 	char * userid
@@ -995,19 +1007,19 @@ ivadmin_user_get(ctx,userid,user,rsp)
 	rsp
 	RETVAL
 
-char * 
+const char * 
 ivadmin_user_getcn(user)
 	ivadmin_ldapuser user
 
-char * 
+const char * 
 ivadmin_user_getdn(user)
 	ivadmin_ldapuser user
 
-char * 
+const char * 
 ivadmin_user_getid(user)
 	ivadmin_ldapuser user
 
-char * 
+const char * 
 ivadmin_user_getdescription(user)
 	ivadmin_ldapuser user
 
@@ -1048,7 +1060,7 @@ ivadmin_response_getcode(rsp,index)
 	ivadmin_response rsp
 	unsigned long index
 
-char *
+const char *
 ivadmin_response_getmessage(rsp,index)
 	ivadmin_response rsp
 	unsigned long index
@@ -1099,7 +1111,7 @@ ivadmin_user_delete2(ctx,userid,registry,rsp)
 	rsp
 	RETVAL
 
-char * 
+const char * 
 ivadmin_user_getsn(user)
 	ivadmin_ldapuser user
 
@@ -1169,19 +1181,190 @@ ivadmin_group_get(ctx,groupid,group,rsp)
 	rsp
 	RETVAL
 
-char * 
+const char * 
 ivadmin_group_getcn(group)
 	ivadmin_ldapgroup group
 
-char * 
+const char * 
 ivadmin_group_getdn(group)
 	ivadmin_ldapgroup group
 
-char * 
+const char * 
 ivadmin_group_getdescription(group)
 	ivadmin_ldapgroup group
 
-char * 
+const char * 
 ivadmin_group_getid(group)
 	ivadmin_ldapgroup group
+
+unsigned long
+ivadmin_group_getmembers(ctx,groupid,userids,rsp)
+	ivadmin_context ctx
+	char * groupid
+	AV * userids
+	ivadmin_response rsp = NO_INIT
+   PREINIT:
+	char ** ids;
+	int i;
+	unsigned long count;
+   CODE:
+	RETVAL = ivadmin_group_getmembers(ctx, groupid, &count, &ids, &rsp);
+	for ( i = 0; i < count; i++ ) {
+		av_push(userids, newSVpv(ids[i],0));
+	}
+   OUTPUT:
+	userids
+	rsp
+	RETVAL
+
+unsigned long
+ivadmin_user_getmemberships(ctx,userid,groupids,rsp)
+	ivadmin_context ctx
+	char * userid
+	AV * groupids
+	ivadmin_response rsp = NO_INIT
+   PREINIT:
+	char ** ids;
+	int i;
+	unsigned long count;
+   CODE:
+	RETVAL = ivadmin_user_getmemberships(ctx, userid, &count, &ids, &rsp);
+	for ( i = 0; i < count; i++ ) {
+		av_push(groupids, newSVpv(ids[i],0));
+	}
+   OUTPUT:
+	groupids
+	rsp
+	RETVAL
+
+unsigned long
+ivadmin_ssogroup_list(ctx,ssogroupids,rsp)
+	ivadmin_context ctx
+	AV * ssogroupids
+	ivadmin_response rsp = NO_INIT
+   PREINIT:
+	char ** ids;
+	int i;
+	unsigned long count;
+   CODE:
+	RETVAL = ivadmin_ssogroup_list(ctx, &count, &ids, &rsp);
+	for ( i = 0; i < count; i++ ) {
+		av_push(ssogroupids, newSVpv(ids[i],0));
+	}
+   OUTPUT:
+	ssogroupids
+	rsp
+	RETVAL
+
+unsigned long
+ivadmin_ssogroup_get(ctx,ssogroupid,ssogroup,rsp)
+	ivadmin_context ctx
+	char * ssogroupid
+	ivadmin_ssogroup ssogroup = NO_INIT
+	ivadmin_response rsp = NO_INIT
+   CODE:
+	RETVAL = ivadmin_ssogroup_get(ctx,ssogroupid,&ssogroup,&rsp);
+   OUTPUT:
+	ssogroup
+	rsp
+	RETVAL
+
+const char * 
+ivadmin_ssogroup_getid(ssogroup)
+	ivadmin_ssogroup ssogroup
+
+const char * 
+ivadmin_ssogroup_getdescription(ssogroup)
+	ivadmin_ssogroup ssogroup
+
+unsigned long
+ivadmin_ssogroup_getresources(ssogroup, ssoids)
+	ivadmin_ssogroup ssogroup
+	AV * ssoids
+   PREINIT:
+	char ** ids;
+	int i;
+	unsigned long count;
+   CODE:
+	RETVAL = ivadmin_ssogroup_getresources(ssogroup, &count, &ids);
+	for ( i = 0; i < count; i++ ) {
+		av_push(ssoids, newSVpv(ids[i],0));
+	}
+   OUTPUT:
+	ssoids
+	RETVAL
+
+unsigned long
+ivadmin_ssoweb_list(ctx,ssowebids,rsp)
+	ivadmin_context ctx
+	AV * ssowebids
+	ivadmin_response rsp = NO_INIT
+   PREINIT:
+	char ** ids;
+	int i;
+	unsigned long count;
+   CODE:
+	RETVAL = ivadmin_ssoweb_list(ctx, &count, &ids, &rsp);
+	for ( i = 0; i < count; i++ ) {
+		av_push(ssowebids, newSVpv(ids[i],0));
+	}
+   OUTPUT:
+	ssowebids
+	rsp
+	RETVAL
+
+const char * 
+ivadmin_ssoweb_getid(ssoweb)
+	ivadmin_ssoweb ssoweb
+
+const char * 
+ivadmin_ssoweb_getdescription(ssoweb)
+	ivadmin_ssoweb ssoweb
+
+const char *
+ivadmin_ssocred_getid(ssocred)
+	ivadmin_ssocred ssocred
+
+const char *
+ivadmin_ssocred_getssouser(ssocred)
+	ivadmin_ssocred ssocred
+
+const char *
+ivadmin_ssocred_getuser(ssocred)
+	ivadmin_ssocred ssocred
+
+unsigned long
+ivadmin_ssocred_get(ctx,ssoid,ssotype,userid,ssocred,rsp)
+	ivadmin_context ctx
+	char * ssoid
+	unsigned long ssotype
+	char * userid
+	ivadmin_ssocred ssocred = NO_INIT
+	ivadmin_response rsp = NO_INIT
+   CODE:
+	RETVAL = ivadmin_ssocred_get(ctx,ssoid,ssotype,userid,&ssocred,&rsp);
+   OUTPUT:
+	ssocred
+	rsp
+	RETVAL
+
+unsigned long
+ivadmin_ssocred_list(ctx,userid,ssocreds,rsp)
+	ivadmin_context ctx
+	char * userid
+	AV * ssocreds
+	ivadmin_response rsp = NO_INIT
+   PREINIT:
+	ivadmin_ssocred * ids;
+	int i;
+	unsigned long count;
+   CODE:
+	RETVAL = ivadmin_ssocred_list(ctx, userid, &count, &ids, &rsp);
+	for ( i = 0; i < count; i++ ) {
+		av_push(ssocreds, newSViv(PTR2IV(ids[i])));
+	}
+   OUTPUT:
+	ssocreds
+	rsp
+	RETVAL
 

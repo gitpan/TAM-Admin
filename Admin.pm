@@ -9,6 +9,8 @@ require Exporter;
 require DynaLoader;
 use AutoLoader;
 
+our $VERSION = '0.3';
+
 our @ISA = qw(Exporter DynaLoader);
 
 # Items to export into callers namespace by default. Note: do not export
@@ -75,7 +77,12 @@ our %EXPORT_TAGS = ( 'all' => [ qw(
 	IVADMIN_TOD_WEEKDAY
 	IVADMIN_TOD_WEEKEND
 	IVADMIN_TRUE
-) ] );
+) ],
+'gso' => [ qw(
+	IVADMIN_SSOCRED_SSOGROUP
+	IVADMIN_SSOCRED_SSOWEB
+) ]
+	 );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
@@ -137,7 +144,6 @@ our @EXPORT = qw(
 	IVADMIN_TOD_WEEKEND
 	IVADMIN_TRUE
 );
-our $VERSION = '0.25';
 
 sub new {
 	my $self = {};
@@ -170,10 +176,22 @@ sub _init {
 	return;
 }
 
+sub cred {
+	my $self = shift;
+	my $pac = shift;
+	my $rsp;
+	my $rv = TAM::Admin::ivadmin_context_setdelcred( $self->{'_context'},
+		$pac, length($pac), $rsp);
+	$self->{'_rsp'} = $rsp;
+	return $rv;
+}
+
 sub get_user {
 	my $self = shift;
 	use TAM::Admin::User;
-	return TAM::Admin::User->new($self->{'_context'}, shift);
+	my $rv = TAM::Admin::User->new($self->{'_context'}, shift);
+	$self->{'_rsp'} = $rv->{'_rsp'};
+	return $rv
 }
 
 sub import_user {
@@ -201,8 +219,8 @@ sub delete_user {
 	my $self = shift;
 	my $id = shift;
 	my $rsp;
-	my $rv = TAM::Admin::ivadmin_user_delete2(
-		$self->{'_context'}, $id, 1, $rsp);
+	my $rv = TAM::Admin::ivadmin_user_delete2( $self->{'_context'}, $id, 1, 
+		$rsp);
 	$self->{'_rsp'} = $rsp;
 	return $rv;
 }
@@ -210,8 +228,9 @@ sub delete_user {
 sub get_group {
 	my $self = shift;
 	use TAM::Admin::Group;
-	return TAM::Admin::Group->new(
-		$self->{'_context'}, shift);
+	my $rv =  TAM::Admin::Group->new( $self->{'_context'}, shift);
+	$self->{'_rsp'} = $rv->{'_rsp'};
+	return $rv
 }
 
 sub import_group {
@@ -248,9 +267,37 @@ sub delete_group {
 sub get_gso {
 	my $self = shift;
 	use TAM::Admin::GSO;
-	return TAM::Admin::GSO->new($self->{'_context'}, @_);
+	my $rv = TAM::Admin::GSO->new($self->{'_context'}, @_);
+	$self->{'_rsp'} = $rv->{'_rsp'};
+	return $rv;
 }
 
+sub all_gso {
+	my $self = shift;
+	my @gso;
+	foreach my $type ( 'group', 'resource') {
+		foreach my $res ( $self->list_gso($type) ) {
+			push @gso, $self->get_gso( $type => $res );
+		}
+	}	
+	return @gso;	
+}
+
+sub list_gso {
+	my $self = shift;
+	my $type = shift;
+	my(@list,$rsp);
+	if ( $type eq 'group' ) {
+		TAM::Admin::ivadmin_ssogroup_list( $self->{'_context'},
+			\@list, $rsp);
+	} elsif ( $type eq 'resource' ) {
+		TAM::Admin::ivadmin_ssoweb_list( $self->{'_context'},
+			\@list, $rsp);
+	} 
+	$self->{'_rsp'} = $rsp;
+	return @list;
+}
+	
 sub msg_count {
 	my $self = shift;
 	return TAM::Admin::ivadmin_response_getcount( 
@@ -353,31 +400,35 @@ TAM::Admin is a set of modules that utilize to TAM Admin C API to perform manage
 
 =head1 METHODS
 
-=head2 new(<user>, <password>, [<options>])
+=head2 Constructor Method
+
+=head3 new(<user>, <password>, [<options>])
 
 Creates a new TAM::Admin object and connects to the policy server. The first two arguments specifies the user ID of the administration and the password. If no other options are specified, the API will utilize the configuration information of the local TAM runtime. Additional options are:
 
-=head3 keyring => FILENAME
+=over 4
+
+=item keyring => FILENAME
 
 Specifies the filename for a CMS keyring database for SSL operations.
 
-=head3 stash => FILENAME
+=item stash => FILENAME
 
 Specifies the filename of the stash file for the keyring.
 
-=head3 password => PASSWORD
+=item password => PASSWORD
 
 Specifies the password for the keyring.  This parameter will take precedence over the stash file.
 
-=head3 dn => CERTIFICATE DN
+=item dn => CERTIFICATE DN
 
 Specifies the DN of a certificate to be utilized for authentication.
 
-=head3 server => HOSTNAME
+=item server => HOSTNAME
 
 Specifies the location of the policy server.
 
-=head3 port => PORT
+=item port => PORT
 
 Specifies the TCP port of the policy server process.  Default port is 7135.
 
@@ -392,39 +443,87 @@ B<Examples>
 		password => 'cmsopen',
 		server => 'tam2.foobar.com'); 
 
-=head2 get_user(<userid>)
+=head2 User Management
+
+These methods are used for basic user management, i.e. get, import, create, remove, and delete.  Management of the individual user, e.g. set account valid, is done via the TAM::Admin::User module.
+
+=head3 get_user(<userid>)
 
 Retrieve a user object for the specified ID.  This function will return a TAM::Admin::User object.
 
-=head2 import_user(<userid>, <dn>)
+=head3 import_user(<userid>, <dn>)
 
-Import a LDAP account into TAM. The first argument will used as the userd TAM logon ID and the second argument designates the LDAP of the existing account.  This function will return a TAM::Admin::User object relating to the imported user.
+Import a LDAP account into TAM. The first argument will used as the TAM logon ID and the second argument designates the LDAP of the existing account.  This function will return a TAM::Admin::User object relating to the imported user.
 
-=head2 remove_user(<userid>)
+=head3 remove_user(<userid>)
 
 Remove a user from TAM only.  This method is equivalent to the following pdadmin command.
 
    pdadmin> user delete <userid>
 
-=head2 delete_user(<userid>)
+=head3 delete_user(<userid>)
 
 Remove a user from TAM and LDAP.  This method is equivalent to the following pdadmin command.
 
    pdadmin> user delete -registry <userid>
 
-=head2 ok
+=head2 Group Methods
+
+These methods are used for basic group management, i.e. get, import, create, remove, and delete.  Management of the individual group, e.g. add users, is done via the TAM::Admin::Group module.
+
+=head3 get_group(<groupid>)
+
+Retrieve a group object for the specified ID.  This function will return a TAM::Admin::Group object.
+
+=head3 import_group(<groupid>, <dn>)
+
+Import a LDAP group into TAM. The first argument will used as the TAM group ID and the second argument designates the LDAP object of the existing group.  This function will return a TAM::Admin::Group object relating to the imported group.
+
+=head3 remove_group(<groupid>)
+
+Remove a group from TAM only.  This method is equivalent to the following pdadmin command.
+
+   pdadmin> group delete <userid>
+
+=head3 delete_group(<groupid>)
+
+Remove a group from TAM and LDAP.  This method is equivalent to the following pdadmin command.
+
+   pdadmin> group delete -registry <groupid>
+
+=head2 GSO Methods 
+
+These methods are used for basic GSO management, i.e. get, create, and delete.  Management of individual GSO objects is done via the TAM::Admin::GSO module.
+
+=head3 get_gso(<type> => <id>)
+
+Returns a TAM::Admin:GSO object for the specified resource.  Type is either 'group' or 'resource' and the ID is the label of the GSO resource.
+
+=head3 all_gso
+
+Returns an array of all TAM::Admin:GSO objects.
+
+=head3 list_gso(<type>)
+
+Returns an array of IDs for all GSO resources of a given type.  Type is either 'group' or 'resource'.
+
+=head2 Response Methods
+
+These methods help manage and retrive messages from actions performed.  These mehoted are inherited by all TAM::Admin objects.
+
+=head3 ok
 
 Returns true if the last action was successful.
 
-=head2 error
+=head3 error
 
 Returns true if the last action was unsuccessful.
 
-=head2 message([<index>])
+=head3 message([<index>])
 
 Returns the error message for the last action. The index will specify which error message to return if the last action resulted in more that one error condition. The index is 0 based.
 
-=head2 code([<index>])
+=head3 code([<index>])
 
 Returns the error code for the last action. The index will specify which error code to return if the last ction resulted in more that one error condition.  The index is 0 based.
 

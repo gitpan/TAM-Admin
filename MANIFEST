@@ -2,6 +2,8 @@ Admin.pm
 Admin.xs
 Admin/User.pm
 Admin/Group.pm
+Admin/GSO.pm
+Admin/GSO/Credential.pm
 Changes
 MANIFEST
 Makefile.PL

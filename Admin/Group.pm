@@ -56,6 +56,15 @@ sub remove {
 	return $self->remove_group($self->{'_id'});
 }
 
+sub members {
+	my $self = shift;
+	my($rsp,@users,$count);
+	TAM::Admin::ivadmin_group_getmembers($self->{'_context'},
+		$self->{'_id'}, $count, \@users, $rsp);	
+	$self->{'_rsp'};	
+	return @users;
+}
+
 1;
 
 __END__

@@ -1,5 +1,17 @@
 Revision history for Perl extension TAM::Admin.
 
+0.30  Tue Jun 01 16:16:00 2004
+	- The following features were added in this release:
+		list GSO objects
+		retrieve all GSO objects
+		get a GSO object by ID and type
+		create a GSO credential
+		retrieve a GSO credential
+		get GSO credential attributes (id, type, owner, username, password)	
+		delete a GSO credential
+		list group membership of a user
+		list members of a group
+	
 0.25  Thu May 27 14:45:00 2004
 	- Renamed module from Tivoli::AccessManager::Admin to TAM::Admin
 

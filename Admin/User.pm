@@ -89,6 +89,45 @@ sub remove {
 	return $self->remove_user($self->{'_id'});
 }
 
+sub groups {
+	my $self = shift;
+	my(@groups,$rsp); 
+	TAM::Admin::ivadmin_user_getmemberships($self->{'_context'}, 
+		$self->{'_id'}, \@groups, $rsp);
+	$self->{'_rsp'} = $rsp;
+	return @groups;
+}
+
+sub add_gso {
+	my $self = shift;
+	my $gso = shift;
+	my $rv = $gso->add_cred( $self->id, @_);
+	$self->{'_rsp'} = $gso->{'_rsp'};
+	return $rv;
+}
+
+sub all_gso {
+	my $self = shift;
+	my(@list,$rsp);
+	TAM::Admin::ivadmin_ssocred_list( $self->{'_context'}, $self->id,
+		 \@list,$rsp);
+	$self->{'_rsp'} = $rsp;	
+	use TAM::Admin::GSO::Credential;
+	foreach my $i (0..$#list) {
+		$list[$i] = TAM::Admin::GSO::Credential->new($list[$i]);
+	}
+	return @list;
+}
+
+sub get_gso {
+	my $self = shift;
+	use TAM::Admin::GSO;
+	my $gso = TAM::Admin::GSO->new($self->{'_context'}, @_);
+	my $cred = $gso->get_cred($self->id);
+	$self->{'_rsp'} = $gso->{'_rsp'};
+	return $cred;
+}
+
 1;
 
 __END__
@@ -96,7 +135,7 @@ __END__
 
 =head1 NAME
 
-TAM::Admin::User - Perl extension for TAM Admin API
+TAM::Admin::User
 
 =head1 SYNOPSIS
 
@@ -127,59 +166,79 @@ TAM::Admin::User is a support module for the TAM::Admin module.
 
 =head1 METHODS
 
-=head2 id
+=head2 Basic Attributes
+
+=head3 id
 
 Return the TAM ID of the user.
 
-=head2 cn
+=head3 cn
 
 Return the LDAP CN of the user.
 
-=head2 sn
+=head3 sn
 
 Return the LDAP SN of the user.
 
-=head2 dn
+=head3 dn
 
 Returns the LDAP DN of the user.
 
-=head2 description(<description>)
+=head3 description(<description>)
 
 Return the current description of the user.  The method will set the description to the value of the first parameter, if passed.
 
-=head2 valid(<valid>)
+=head3 valid(<valid>)
 
 Returns true if the account is currently valid.  The method will also set the account validity of the user if 1 (valid) or 0 (invalid) is passed as an argument.
 
-=head2 gso(<valid>)
+=head3 gso(<valid>)
 
 Returns true if the account is a GSO user.  The method will also set the GSO state of the user if 1 (GSO user) or 0 (non-GSO user) is passed as an argument.
 
-=head2 remove
+=head2 Account Removal
+
+=head3 remove
 
 Remove the user from TAM only.  This method is equivalent to the following pdadmin command.
 
    pdadmin> user delete <userid>
 
-=head2 delete
+=head3 delete
 
 Remove the user from TAM and LDAP.  This method is equivalent to the following pdadmin command.
 
    pdadmin> user delete -registry <userid>
 
-=head2 ok
+=head2 GSO Methods
+
+=head3 add_gso(<gso>, <username>, <password>)
+
+Create a new GSO credential for this user. The first argument is a GSO object that corresponds to the GSO resource to add the credential. The next two (2) arguments specify the username/password pair to be added into the new credential.
+
+=head3 all_gso
+
+Returns an array of all GSO credential objects for the user.  The items in the array will be TAM::Admin::GSO::Credential objects.
+
+=head3 get_gso(<type> => <id>)
+
+Return the a specific GSO credential object for the user. Type is ether 'group' or resource and ID is the label of the GSO resource.  The returned object will be a TAM::Admin:GSO::Credential object.
+
+=head2 Response Methods
+
+=head3 ok
 
 Returns true if the last action was successful.
 
-=head2 error
+=head3 error
 
 Returns true if the last action was unsuccessful.
 
-=head2 message([<index>])
+=head3 message([<index>])
 
 Returns the error message for the last action. The index will specify which error message to return if the last action resulted in more that one error condition. The index is 0 based.
 
-=head2 code([<index>])
+=head3 code([<index>])
 
 Returns the error code for the last action. The index will specify which error code to return if the last ction resulted in more that one error condition.  The index is 0 based.
 
