@@ -1,5 +1,14 @@
 Revision history for Perl extension TAM::Admin.
 
+0.35  Thu Jun 24 16:40:00 2004
+        - The following features were added in this release:
+		retrieve a user by LDAP DN
+		retrieve a group by LDAP DN
+		list protected objects
+	- Cleaned up code for the following:
+		list group membership of a user
+		list memebers of a group
+
 0.30  Tue Jun 01 16:16:00 2004
 	- The following features were added in this release:
 		list GSO objects

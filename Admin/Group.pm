@@ -7,10 +7,17 @@ our @ISA = qw(TAM::Admin);
 sub _init {
         my $self = shift;
         $self->{'_context'} = shift;
-        $self->{'_id'} = shift;
 	my($group,$rsp);
-	TAM::Admin::ivadmin_group_get(
-		$self->{'_context'}, $self->{'_id'}, $group, $rsp);
+	if ( $#_ == 0 ) {
+		TAM::Admin::ivadmin_group_get( $self->{'_context'}, shift, 
+			$group, $rsp);
+	} elsif ( lc($_[0]) eq 'dn' ) {
+		TAM::Admin::ivadmin_group_getbydn( $self->{'_context'}, $_[1], 
+			$group, $rsp);
+	} elsif ( $#_ == 1 ) {
+		TAM::Admin::ivadmin_group_get( $self->{'_context'}, $_[1], 
+			$group, $rsp);
+	}
 	$self->{'_rsp'} = $rsp;
         $self->{'_object'} = $group;
         return;
@@ -58,9 +65,9 @@ sub remove {
 
 sub members {
 	my $self = shift;
-	my($rsp,@users,$count);
+	my($rsp,@users);
 	TAM::Admin::ivadmin_group_getmembers($self->{'_context'},
-		$self->{'_id'}, $count, \@users, $rsp);	
+		$self->{'_id'}, \@users, $rsp);	
 	$self->{'_rsp'};	
 	return @users;
 }

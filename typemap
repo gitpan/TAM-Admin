@@ -5,3 +5,4 @@ ivadmin_ldapgroup  	T_PTROBJ
 ivadmin_ssoweb		T_PTROBJ
 ivadmin_ssogroup	T_PTROBJ
 ivadmin_ssocred		T_PTROBJ
+void		T_PTROBJ

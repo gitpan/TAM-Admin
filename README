@@ -1,4 +1,4 @@
-This is TAM::Admin, a set of Perl modules that allow one to utilize the TAM admin API to perform TAM adminstration actions within a Perl script.  More information on TAM can be found at:
+This is TAM::Admin, a set of Perl modules that allow one to utilize the Tivoli Access Manager (TAM) admin API to perform TAM adminstration actions within a Perl script.  More information on TAM can be found at:
 
 http://www-306.ibm.com/software/tivoli/products/access-mgr-e-bus/
 

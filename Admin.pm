@@ -9,7 +9,7 @@ require Exporter;
 require DynaLoader;
 use AutoLoader;
 
-our $VERSION = '0.3';
+our $VERSION = '0.35';
 
 our @ISA = qw(Exporter DynaLoader);
 
@@ -179,17 +179,16 @@ sub _init {
 sub cred {
 	my $self = shift;
 	my $pac = shift;
-	my $rsp;
+	TAM::Admin::ivadmin_free($self->{'_rsp'});
 	my $rv = TAM::Admin::ivadmin_context_setdelcred( $self->{'_context'},
-		$pac, length($pac), $rsp);
-	$self->{'_rsp'} = $rsp;
+		$pac, length($pac), $self->{'_rsp'});
 	return $rv;
 }
 
 sub get_user {
 	my $self = shift;
 	use TAM::Admin::User;
-	my $rv = TAM::Admin::User->new($self->{'_context'}, shift);
+	my $rv = TAM::Admin::User->new($self->{'_context'}, @_);
 	$self->{'_rsp'} = $rv->{'_rsp'};
 	return $rv
 }
@@ -228,7 +227,7 @@ sub delete_user {
 sub get_group {
 	my $self = shift;
 	use TAM::Admin::Group;
-	my $rv =  TAM::Admin::Group->new( $self->{'_context'}, shift);
+	my $rv =  TAM::Admin::Group->new( $self->{'_context'}, @_);
 	$self->{'_rsp'} = $rv->{'_rsp'};
 	return $rv
 }
@@ -298,6 +297,16 @@ sub list_gso {
 	return @list;
 }
 	
+sub list_objects {
+        my $self = shift;
+        my $parent = shift;
+        my(@list,$rsp);
+        TAM::Admin::ivadmin_protobj_list3( $self->{'_context'}, $parent,
+                        \@list, $rsp);
+        $self->{'_rsp'} = $rsp;
+        return @list;
+}
+
 sub msg_count {
 	my $self = shift;
 	return TAM::Admin::ivadmin_response_getcount( 
@@ -374,7 +383,7 @@ __END__
 
 =head1 NAME
 
-TAM::Admin - Perl extension for TAM Admin API
+TAM::Admin - Perl extension for Tivoli Access Manager (TAM) Admin API
 
 =head1 SYNOPSIS
 
@@ -449,7 +458,9 @@ These methods are used for basic user management, i.e. get, import, create, remo
 
 =head3 get_user(<userid>)
 
-Retrieve a user object for the specified ID.  This function will return a TAM::Admin::User object.
+Retrieve a user object for the specified ID.  This function will return a TAM::Admin::User object.  A user object can also be retrieved by LDAP DN.  To get a user by DN call the method in the following fashion...
+
+  $pdadmin->get_user(dn => <ldap dn>)
 
 =head3 import_user(<userid>, <dn>)
 
@@ -473,8 +484,9 @@ These methods are used for basic group management, i.e. get, import, create, rem
 
 =head3 get_group(<groupid>)
 
-Retrieve a group object for the specified ID.  This function will return a TAM::Admin::Group object.
+Retrieve a group object for the specified ID.  This function will return a TAM::Admin::Group object.  A group object can also be retrieved by LDAP DN.  To get a user by DN call the method in the following fashion...
 
+  $pdadmin->get_group(dn => <ldap dn>)
 =head3 import_group(<groupid>, <dn>)
 
 Import a LDAP group into TAM. The first argument will used as the TAM group ID and the second argument designates the LDAP object of the existing group.  This function will return a TAM::Admin::Group object relating to the imported group.
@@ -506,6 +518,16 @@ Returns an array of all TAM::Admin:GSO objects.
 =head3 list_gso(<type>)
 
 Returns an array of IDs for all GSO resources of a given type.  Type is either 'group' or 'resource'.
+
+=head2 Protected Object Methods
+
+These methods are used for basic management of TAM protected objects. 
+
+=head3 list_objects(<path>)
+
+Returns an array of objects that are contained in the path given. This method is equivalent to the following pdadmin command
+
+   pdadmin> object list <path>
 
 =head2 Response Methods
 

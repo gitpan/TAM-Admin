@@ -1007,6 +1007,19 @@ ivadmin_user_get(ctx,userid,user,rsp)
 	rsp
 	RETVAL
 
+unsigned long
+ivadmin_user_getbydn(ctx,dn,user,rsp)
+	ivadmin_context ctx
+	char * dn
+	ivadmin_ldapuser user = NO_INIT
+	ivadmin_response rsp = NO_INIT
+   CODE:
+	RETVAL = ivadmin_user_getbydn(ctx, dn, &user, &rsp);
+   OUTPUT:
+	user
+	rsp
+	RETVAL
+
 const char * 
 ivadmin_user_getcn(user)
 	ivadmin_ldapuser user
@@ -1176,6 +1189,19 @@ ivadmin_group_get(ctx,groupid,group,rsp)
 	ivadmin_response rsp = NO_INIT
    CODE:
 	RETVAL = ivadmin_group_get(ctx, groupid, &group, &rsp);
+   OUTPUT:
+	group
+	rsp
+	RETVAL
+
+unsigned long
+ivadmin_group_getbydn(ctx,dn,group,rsp)
+	ivadmin_context ctx
+	char * dn
+	ivadmin_ldapgroup group = NO_INIT
+	ivadmin_response rsp = NO_INIT
+   CODE:
+	RETVAL = ivadmin_group_getbydn(ctx, dn, &group, &rsp);
    OUTPUT:
 	group
 	rsp
@@ -1368,3 +1394,26 @@ ivadmin_ssocred_list(ctx,userid,ssocreds,rsp)
 	rsp
 	RETVAL
 
+unsigned long
+ivadmin_protobj_list3(ctx,objid,objs,rsp)
+        ivadmin_context ctx
+        char * objid
+        AV * objs
+        ivadmin_response rsp = NO_INIT
+   PREINIT:
+	int i;
+        char ** ids;
+        azn_attrlist_h_t indata;
+        azn_attrlist_h_t outdata;
+        char ** results;
+        unsigned long objcount;
+        unsigned long resultcount;
+   CODE:
+        RETVAL = ivadmin_protobj_list3(ctx, objid, &indata, &objcount, &ids, &outdata, &resultcount, &results, &rsp);
+        for ( i = 0; i < objcount; i++ ) {
+                av_push(objs, newSVpv(ids[i],0));
+        }
+   OUTPUT:
+        objs
+        rsp
+	RETVAL

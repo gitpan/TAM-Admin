@@ -14,9 +14,18 @@ sub new {
 sub _init {
         my $self = shift;
         $self->{'_context'} = shift;
-        $self->{'_id'} = shift;
 	my($user,$rsp);
-	TAM::Admin::ivadmin_user_get($self->{'_context'}, $self->{'_id'}, $user, $rsp);
+	if ( $#_ == 0 ) {
+		TAM::Admin::ivadmin_user_get($self->{'_context'}, 
+			shift, $user, $rsp);
+	} elsif ( lc($_[0]) eq 'dn' ) {
+		TAM::Admin::ivadmin_user_getbydn($self->{'_context'}, 
+			$_[1], $user, $rsp);
+	} elsif ( $#_ == 1 ) { 
+		TAM::Admin::ivadmin_user_get($self->{'_context'}, 
+			$_[1], $user, $rsp);
+	}
+		 
 	$self->{'_rsp'} = $rsp;
         $self->{'_object'} = $user;
         return;
